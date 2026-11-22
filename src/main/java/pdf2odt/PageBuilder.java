@@ -46,10 +46,9 @@ final class PageBuilder {
      *
      * @param bodySize   font size of the body text
      * @param flowPitch  usual line pitch in the text flow
-     * @param cellPitch  usual line pitch in table cells
      * @param vocabulary all words of the document (lower case), used to resolve hyphenation
      */
-    record Context(float bodySize, float flowPitch, float cellPitch, Set<String> vocabulary) {
+    record Context(float bodySize, float flowPitch, Set<String> vocabulary) {
     }
 
     record Line(List<Word> words, float top, float baseline, float fontSize, boolean bold) {
@@ -110,29 +109,12 @@ final class PageBuilder {
         for (List<WordCell> detectedRow : detected.rows()) {
             List<Cell> row = new ArrayList<>();
             for (WordCell c : detectedRow) {
-                row.add(c == null ? null : new Cell(paragraphs(c.words(), ctx), c.colSpan(), c.rowSpan()));
+                row.add(c == null ? null : new Cell(join(lines(c.words()), ctx.vocabulary()), c.colSpan(), c.rowSpan()));
             }
             rows.add(row);
         }
         List<Double> widths = detected.columnWidths().stream().map(w -> w * PT_TO_CM).toList();
         return new Table(rows, widths);
-    }
-
-    /** Paragraphs of a table cell, without heading detection. */
-    static List<String> paragraphs(List<Word> words, Context ctx) {
-        List<String> paragraphs = new ArrayList<>();
-        List<Line> current = new ArrayList<>();
-        for (Line line : lines(words)) {
-            if (!current.isEmpty() && newParagraph(current.getLast(), line, ctx.cellPitch(), ctx.bodySize())) {
-                paragraphs.add(join(current, ctx.vocabulary()));
-                current.clear();
-            }
-            current.add(line);
-        }
-        if (!current.isEmpty()) {
-            paragraphs.add(join(current, ctx.vocabulary()));
-        }
-        return paragraphs;
     }
 
     /** Bold and either larger than body text or numbered with several levels; must contain letters. */

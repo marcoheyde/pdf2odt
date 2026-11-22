@@ -35,8 +35,8 @@ class OdtWriterTest {
                 new Model.Heading(1, "1 Einleitung"),
                 new Model.Paragraph("Text mit <Sonderzeichen> & Umlauten äöü."),
                 new Model.Table(List.of(
-                        List.of(new Cell(List.of("Feld"), 1, 1), new Cell(List.of("Typ"), 1, 1)),
-                        Arrays.asList(new Cell(List.of("über zwei Spalten"), 2, 1), null)), List.of(3.0, 9.0)),
+                        List.of(new Cell("Feld", 1, 1), new Cell("Typ", 1, 1)),
+                        Arrays.asList(new Cell("über zwei Spalten", 2, 1), null)), List.of(3.0, 9.0)),
                 new Model.Image(png.toByteArray(), 2.0, 2.0, "0123456789abcdef"));
 
         Path odt = dir.resolve("test.odt");

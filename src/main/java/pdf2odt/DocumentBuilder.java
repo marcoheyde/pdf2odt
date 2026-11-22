@@ -56,13 +56,7 @@ final class DocumentBuilder {
         removeHeadersAndFooters(flow, heights);
 
         float bodySize = bodySize(pages);
-        List<List<Word>> cells = new ArrayList<>();
-        tables.forEach(page -> page.forEach(t -> t.rows().forEach(row -> row.forEach(c -> {
-            if (c != null) {
-                cells.add(c.words());
-            }
-        }))));
-        Context ctx = new Context(bodySize, pitch(flow, bodySize), pitch(cells, bodySize), vocabulary(pages));
+        Context ctx = new Context(bodySize, pitch(flow, bodySize), vocabulary(pages));
 
         List<List<Block>> pageBlocks = new ArrayList<>();
         for (int i = 0; i < pages.size(); i++) {

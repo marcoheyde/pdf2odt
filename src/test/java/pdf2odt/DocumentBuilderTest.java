@@ -75,6 +75,6 @@ class DocumentBuilderTest {
     }
 
     private static List<Cell> row(String... texts) {
-        return List.of(texts).stream().map(t -> new Cell(List.of(t), 1, 1)).toList();
+        return List.of(texts).stream().map(t -> new Cell(t, 1, 1)).toList();
     }
 }

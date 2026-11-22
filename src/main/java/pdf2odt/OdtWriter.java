@@ -263,10 +263,7 @@ final class OdtWriter {
                 if (span > 1) {
                     w.writeAttribute("table", TABLE, "number-columns-spanned", String.valueOf(span));
                 }
-                List<String> paragraphs = cell == null || cell.paragraphs().isEmpty() ? List.of("") : cell.paragraphs();
-                for (String paragraph : paragraphs) {
-                    writeParagraph(w, paragraph);
-                }
+                writeParagraph(w, cell == null ? "" : cell.text());
                 w.writeEndElement();
                 for (int k = 1; k < span; k++) {
                     w.writeEmptyElement("table", "covered-table-cell", TABLE);

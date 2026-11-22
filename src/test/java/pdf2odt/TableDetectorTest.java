@@ -91,8 +91,8 @@ class TableDetectorTest {
 
             assertEquals(1, blocks.size());
             Table table = (Table) blocks.getFirst();
-            assertEquals(List.of(List.of("Feld"), List.of("Typ")), table.rows().get(0).stream().map(Cell::paragraphs).toList());
-            assertEquals(List.of(List.of("LIID"), List.of("String")), table.rows().get(1).stream().map(Cell::paragraphs).toList());
+            assertEquals(List.of("Feld", "Typ"), table.rows().get(0).stream().map(Cell::text).toList());
+            assertEquals(List.of("LIID", "String"), table.rows().get(1).stream().map(Cell::text).toList());
         }
     }
 

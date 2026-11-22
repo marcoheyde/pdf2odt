@@ -24,7 +24,12 @@ final class Model {
     record Table(List<List<Cell>> rows, List<Double> columnWidthsCm) implements Block {
     }
 
-    record Cell(List<String> paragraphs, int colSpan, int rowSpan) {
+    /**
+     * A table cell. Its content is always a single paragraph: Writer compares table rows only as a whole,
+     * so paragraphs within a cell do not help the comparison, but differing paragraph splits (e.g. Word
+     * vs. InDesign spacing) would mark otherwise identical rows as changed.
+     */
+    record Cell(String text, int colSpan, int rowSpan) {
     }
 
     record Image(byte[] png, double widthCm, double heightCm, String hash) implements Block {
