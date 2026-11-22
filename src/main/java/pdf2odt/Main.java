@@ -8,10 +8,10 @@ import java.util.logging.Logger;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 
-/** Aufruf: {@code java -jar pdf2odt.jar eingabe.pdf ausgabe.odt} */
+/** Usage: {@code java -jar pdf2odt.jar input.pdf output.odt} */
 public final class Main {
 
-    /** PDFBox meldet z. B. fehlende Schriften; für die Textextraktion ist das unerheblich. */
+    /** PDFBox reports e.g. missing fonts; this is irrelevant for text extraction. */
     private static final Logger PDFBOX_LOG = Logger.getLogger("org.apache");
 
     private Main() {
@@ -19,7 +19,7 @@ public final class Main {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 2) {
-            System.err.println("Aufruf: java -jar pdf2odt.jar eingabe.pdf ausgabe.odt");
+            System.err.println("Usage: java -jar pdf2odt.jar input.pdf output.odt");
             System.exit(2);
         }
         PDFBOX_LOG.setLevel(Level.SEVERE);

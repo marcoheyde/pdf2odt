@@ -30,7 +30,7 @@ class ImageHashTest {
         assertNotEquals(ImageHash.of(diagram("Client", "Server")), ImageHash.of(diagram("Client", null)));
     }
 
-    /** Ein einfaches Diagramm mit zwei Kästen; ohne zweiten Namen fehlt der rechte Kasten. */
+    /** A simple diagram with two boxes; without a second name the right box is missing. */
     private static BufferedImage diagram(String left, String right) {
         BufferedImage image = new BufferedImage(400, 200, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = image.createGraphics();

@@ -2,7 +2,7 @@ package pdf2odt;
 
 import java.util.List;
 
-/** Formatunabhängiges Dokumentmodell: eine flache Folge von Blöcken. */
+/** Format-independent document model: a flat sequence of blocks. */
 final class Model {
 
     private Model() {
@@ -18,8 +18,8 @@ final class Model {
     }
 
     /**
-     * Tabelle als Raster: jede Zeile hat gleich viele Positionen.
-     * {@code null} markiert eine Position, die von einer verbundenen Zelle überdeckt wird.
+     * Table as a grid: every row has the same number of positions.
+     * {@code null} marks a position covered by a merged cell.
      */
     record Table(List<List<Cell>> rows, List<Double> columnWidthsCm) implements Block {
     }

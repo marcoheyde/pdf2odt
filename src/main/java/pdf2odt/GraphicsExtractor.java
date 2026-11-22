@@ -19,16 +19,16 @@ import org.apache.pdfbox.pdmodel.graphics.image.PDImage;
 import pdf2odt.Model.Image;
 
 /**
- * Liest die Bilder und die waagrechten/senkrechten Linien einer Seite.
- * Koordinaten wie bei {@link PageExtractor}: y zählt von der Seitenoberkante nach unten.
+ * Reads the images and the horizontal/vertical lines of a page.
+ * Coordinates as in {@link PageExtractor}: y counts downwards from the top edge of the page.
  */
 final class GraphicsExtractor extends PDFGraphicsStreamEngine {
 
-    /** Ein Bild mit seiner Oberkante auf der Seite. */
+    /** An image with its top edge on the page. */
     record PlacedImage(float top, Image image) {
     }
 
-    /** Eine waagrechte ({@code horizontal}) oder senkrechte Linie bei {@code pos} von {@code from} bis {@code to}. */
+    /** A horizontal ({@code horizontal}) or vertical line at {@code pos} from {@code from} to {@code to}. */
     record Segment(boolean horizontal, float pos, float from, float to) {
     }
 
@@ -36,14 +36,14 @@ final class GraphicsExtractor extends PDFGraphicsStreamEngine {
     }
 
     private static final double PT_TO_CM = 2.54 / 72;
-    /** Gefüllte Rechtecke bis zu dieser Dicke gelten als Linie (Word und InDesign zeichnen Linien so). */
+    /** Filled rectangles up to this thickness count as lines (Word and InDesign draw lines this way). */
     private static final double MAX_LINE_WIDTH = 3;
 
     private final PDRectangle cropBox;
     private final List<PlacedImage> images = new ArrayList<>();
     private final List<Segment> segments = new ArrayList<>();
 
-    /** Der aktuelle Pfad: Rechtecke und gerade Linienstücke in Seitenkoordinaten. */
+    /** The current path: rectangles and straight line pieces in page coordinates. */
     private final List<Rectangle2D> pathRects = new ArrayList<>();
     private final List<Point2D[]> pathLines = new ArrayList<>();
     private Point2D current = new Point2D.Float();
@@ -60,14 +60,14 @@ final class GraphicsExtractor extends PDFGraphicsStreamEngine {
         return new Graphics(extractor.images, extractor.segments);
     }
 
-    /** Umrechnung von PDF-Koordinaten (y nach oben) in Seitenkoordinaten (y nach unten). */
+    /** Converts PDF coordinates (y upwards) to page coordinates (y downwards). */
     private Point2D toPage(double x, double y) {
         return new Point2D.Double(x - cropBox.getLowerLeftX(), cropBox.getUpperRightY() - y);
     }
 
     @Override
     public void drawImage(PDImage pdImage) throws IOException {
-        // Das Bild füllt das Einheitsquadrat, abgebildet durch die aktuelle Transformationsmatrix.
+        // The image fills the unit square, mapped by the current transformation matrix.
         Rectangle2D bounds = getGraphicsState().getCurrentTransformationMatrix().createAffineTransform()
                 .createTransformedShape(new Rectangle2D.Double(0, 0, 1, 1)).getBounds2D();
         BufferedImage image = pdImage.getImage();
@@ -81,7 +81,7 @@ final class GraphicsExtractor extends PDFGraphicsStreamEngine {
                 bounds.getWidth() * PT_TO_CM, bounds.getHeight() * PT_TO_CM, ImageHash.of(image))));
     }
 
-    // ---------------------------------------------------------------- Pfad aufbauen
+    // ---------------------------------------------------------------- path construction
 
     @Override
     public void appendRectangle(Point2D p0, Point2D p1, Point2D p2, Point2D p3) {
@@ -120,7 +120,7 @@ final class GraphicsExtractor extends PDFGraphicsStreamEngine {
         lineTo((float) subpathStart.getX(), (float) subpathStart.getY());
     }
 
-    // ---------------------------------------------------------------- Pfad zeichnen
+    // ---------------------------------------------------------------- path painting
 
     @Override
     public void strokePath() {
@@ -165,14 +165,14 @@ final class GraphicsExtractor extends PDFGraphicsStreamEngine {
 
     @Override
     public void clip(int windingRule) {
-        // Der Pfad wird anschließend mit endPath() verworfen.
+        // The path is discarded afterwards by endPath().
     }
 
     @Override
     public void shadingFill(COSName shadingName) {
     }
 
-    /** Übernimmt nur waagrechte oder senkrechte Linien. */
+    /** Keeps only horizontal or vertical lines. */
     private void addSegment(double x1, double y1, double x2, double y2) {
         if (Math.abs(y1 - y2) < 0.5 && Math.abs(x1 - x2) >= 0.5) {
             segments.add(new Segment(true, (float) ((y1 + y2) / 2), (float) Math.min(x1, x2), (float) Math.max(x1, x2)));

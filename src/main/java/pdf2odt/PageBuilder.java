@@ -18,37 +18,37 @@ import pdf2odt.PageExtractor.Word;
 import pdf2odt.TableDetector.DetectedTable;
 import pdf2odt.TableDetector.WordCell;
 
-/** Baut aus den Wörtern, Bildern und Tabellen einer Seite Überschriften, Absätze, Tabellen und Bilder. */
+/** Builds headings, paragraphs, tables and images from the words, images and tables of one page. */
 final class PageBuilder {
 
-    /** Wörter, deren Grundlinien höchstens so weit auseinander liegen, bilden eine Zeile. */
+    /** Words whose baselines are at most this far apart form one line. */
     private static final float SAME_LINE = 2f;
-    /** Ein Grundlinienabstand über dem üblichen Zeilenabstand × diesem Faktor beginnt einen neuen Absatz. */
+    /** A baseline distance above the usual line pitch × this factor starts a new paragraph. */
     private static final float PARAGRAPH_GAP = 1.3f;
-    /** Überschriften sind fett und mindestens um diesen Faktor größer als der Fließtext. */
+    /** Headings are bold and larger than body text by at least this factor. */
     private static final float HEADING_SIZE = 1.1f;
-    /** Ab so vielen Zeilen mit Füllpunkten gilt eine Seite als Inhaltsverzeichnis. */
+    /** A page with at least this many dot-leader lines is a table of contents page. */
     private static final int TOC_LINES = 5;
     private static final double PT_TO_CM = 2.54 / 72;
 
-    /** "Teil A", "Anlage A.1.2" oder "3.1.2" bzw. "3." am Zeilenanfang. */
+    /** "Teil A", "Anlage A.1.2", or "3.1.2" / "3." at the start of a line. */
     private static final Pattern NUMBERING =
             Pattern.compile("^(?:(Teil) [A-Z]\\b|Anlage [A-Z]((?:\\.\\d+)*)\\b|(\\d+(?:\\.\\d+)*)\\.?(?:\\s|$))");
 
-    /** Mehrstufige Nummerierung wie "2.2.1" oder "Anlage A.1"; einfache Listen wie "1." zählen nicht. */
+    /** Multi-level numbering such as "2.2.1" or "Anlage A.1"; simple list numbers such as "1." do not count. */
     private static final Pattern DEEP_NUMBERING = Pattern.compile("^(?:\\d+(?:\\.\\d+)+|Anlage [A-Z](?:\\.\\d+)+)\\s");
 
-    /**
-     * Kennzahlen des ganzen Dokuments.
-     *
-     * @param bodySize   Schriftgröße des Fließtextes
-     * @param flowPitch  üblicher Zeilenabstand im Fließtext
-     * @param cellPitch  üblicher Zeilenabstand in Tabellenzellen
-     * @param vocabulary alle Wörter des Dokuments (klein geschrieben), zum Auflösen von Silbentrennungen
-     */
-    /** Aufzählungspunkt am Zeilenanfang: "•", "-", "–", "a)" oder "1.". */
+    /** List item marker at the start of a line: "•", "-", "–", "a)" or "1.". */
     private static final Pattern LIST_ITEM = Pattern.compile("^(?:[•\\-–]|[a-z]\\)|\\d+\\.)\\s");
 
+    /**
+     * Document-wide metrics.
+     *
+     * @param bodySize   font size of the body text
+     * @param flowPitch  usual line pitch in the text flow
+     * @param cellPitch  usual line pitch in table cells
+     * @param vocabulary all words of the document (lower case), used to resolve hyphenation
+     */
     record Context(float bodySize, float flowPitch, float cellPitch, Set<String> vocabulary) {
     }
 
@@ -65,14 +65,14 @@ final class PageBuilder {
         }
     }
 
-    /** Ein Bild oder eine Tabelle mit Oberkante, einzusortieren zwischen die Textzeilen. */
+    /** An image or table with its top edge, to be placed between the text lines. */
     private record Placed(float top, Block block) {
     }
 
     private PageBuilder() {
     }
 
-    /** @param words die Wörter außerhalb von Tabellen, ohne Kopf- und Fußzeilen */
+    /** @param words the words outside of tables, without page headers and footers */
     static List<Block> build(List<Word> words, List<PlacedImage> images, List<DetectedTable> tables, Context ctx) {
         List<Placed> pending = new ArrayList<>();
         images.forEach(i -> pending.add(new Placed(i.top(), i.image())));
@@ -80,7 +80,7 @@ final class PageBuilder {
         pending.sort(Comparator.comparingDouble(Placed::top));
 
         List<Line> lines = lines(words);
-        // Seiten des Inhaltsverzeichnisses (viele Zeilen mit Füllpunkten) enthalten keine Überschriften.
+        // Table of contents pages (many dot-leader lines) contain no headings.
         boolean tocPage = lines.stream().filter(l -> l.text().contains("....")).count() >= TOC_LINES;
 
         List<Block> blocks = new ArrayList<>();
@@ -118,7 +118,7 @@ final class PageBuilder {
         return new Table(rows, widths);
     }
 
-    /** Absätze einer Tabellenzelle, ohne Überschriftenerkennung. */
+    /** Paragraphs of a table cell, without heading detection. */
     static List<String> paragraphs(List<Word> words, Context ctx) {
         List<String> paragraphs = new ArrayList<>();
         List<Line> current = new ArrayList<>();
@@ -135,7 +135,7 @@ final class PageBuilder {
         return paragraphs;
     }
 
-    /** Fett und entweder größer als der Fließtext oder mehrstufig nummeriert; muss Buchstaben enthalten. */
+    /** Bold and either larger than body text or numbered with several levels; must contain letters. */
     private static boolean isHeading(Line line, float bodySize) {
         String text = line.text();
         return line.bold()
@@ -143,7 +143,7 @@ final class PageBuilder {
                 && text.codePoints().anyMatch(Character::isLetter);
     }
 
-    /** Gehört {@code line} noch zum selben Absatz bzw. zur selben (mehrzeiligen) Überschrift? */
+    /** Does {@code line} still belong to the same paragraph or (multi-line) heading? */
     private static boolean continues(Line previous, Line line, boolean previousIsHeading, boolean heading,
             Context ctx) {
         if (previousIsHeading != heading || newParagraph(previous, line, ctx.flowPitch(), ctx.bodySize())) {
@@ -154,8 +154,8 @@ final class PageBuilder {
     }
 
     /**
-     * Ein neuer Absatz beginnt bei größerem Abstand als üblich (bei größerer Schrift entsprechend mehr)
-     * und bei jedem Aufzählungspunkt.
+     * A new paragraph starts at a larger distance than usual (proportionally more for larger fonts)
+     * and at every list item.
      */
     private static boolean newParagraph(Line previous, Line line, float pitch, float bodySize) {
         float scale = Math.max(1f, previous.fontSize() / bodySize);
@@ -172,7 +172,7 @@ final class PageBuilder {
         lines.clear();
     }
 
-    /** Gliederungsebene aus der Nummerierung: Teil → 1, "3." → 2, "3.1" → 3, Anlage A → 2, A.1 → 3. */
+    /** Outline level from the numbering: Teil → 1, "3." → 2, "3.1" → 3, Anlage A → 2, A.1 → 3. */
     static int level(String heading) {
         Matcher m = NUMBERING.matcher(heading);
         if (!m.find() || m.group(1) != null) {
@@ -212,9 +212,9 @@ final class PageBuilder {
     }
 
     /**
-     * Verbindet zwei Zeilen. Endet die erste mit Bindestrich, bleibt er ohne Leerzeichen stehen –
-     * außer bei einer Silbentrennung: die zweite Zeile beginnt klein und das zusammengeschriebene
-     * Wort kommt im Dokument vor ("techni-" + "sche" → "technische").
+     * Joins two lines. If the first ends with a hyphen, it is kept without a space – except for
+     * hyphenation: the second line starts in lower case and the joined word occurs in the document
+     * ("techni-" + "sche" → "technische").
      */
     static String joinText(String first, String second, Set<String> vocabulary) {
         if (!first.endsWith("-")) {

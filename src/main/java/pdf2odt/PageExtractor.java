@@ -13,12 +13,12 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
 
 /**
- * Liest die Wörter jeder Seite mit Position und Schrift.
- * Alle y-Koordinaten zählen von der Seitenoberkante nach unten.
+ * Reads the words of every page with position and font.
+ * All y coordinates count downwards from the top edge of the page.
  */
 final class PageExtractor extends PDFTextStripper {
 
-    /** Ein Wort; {@code baseline} ist die Grundlinie, {@code top} die Oberkante. */
+    /** A word; {@code baseline} is the baseline, {@code top} the top edge. */
     record Word(String text, float x, float right, float top, float baseline, float fontSize, boolean bold) {
     }
 
@@ -39,7 +39,7 @@ final class PageExtractor extends PDFTextStripper {
         pages.add(new ArrayList<>());
     }
 
-    /** PDFBox liefert hier Textstücke; sie werden an Leerzeichen in einzelne Wörter zerlegt. */
+    /** PDFBox delivers text chunks here; they are split into single words at blanks. */
     @Override
     protected void writeString(String text, List<TextPosition> positions) {
         List<TextPosition> word = new ArrayList<>();
@@ -71,15 +71,15 @@ final class PageExtractor extends PDFTextStripper {
     }
 
     /**
-     * Zeichen der Schriften Symbol und Wingdings ohne Unicode-Zuordnung liefert PDFBox als Zeichen aus
-     * dem privaten Bereich (U+F0xx); die in Aufzählungen üblichen werden in echte Zeichen übersetzt.
+     * PDFBox returns characters of the Symbol and Wingdings fonts without a Unicode mapping as private use
+     * characters (U+F0xx); those common in lists are translated into real characters.
      */
     private static String symbol(String text) {
         return switch (text) {
-            case "" -> "•";
-            case "" -> "▪";
-            case "" -> "➢";
-            case "" -> "→";
+            case "\uF0B7" -> "•";
+            case "\uF0A7" -> "▪";
+            case "\uF0D8" -> "➢";
+            case "\uF0E0" -> "→";
             default -> text;
         };
     }

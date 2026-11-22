@@ -46,7 +46,7 @@ class OdtWriterTest {
             ZipEntry first = zip.entries().nextElement();
             assertEquals("mimetype", first.getName());
             assertEquals(ZipEntry.STORED, first.getMethod());
-            assertNotNull(zip.getEntry("Pictures/bild1.png"));
+            assertNotNull(zip.getEntry("Pictures/image1.png"));
 
             var factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
@@ -57,10 +57,10 @@ class OdtWriterTest {
             assertTrue(content.contains("text:outline-level=\"1\""));
             assertTrue(content.contains("table:number-columns-spanned=\"2\""));
             assertTrue(content.contains("table:covered-table-cell"));
-            assertTrue(content.contains("[Bild 0123456789abcdef]"));
-            // jede Tabellenzeile ist eine eigene Tabelle mit den Spaltenbreiten aus dem PDF
-            assertTrue(content.contains("table:name=\"Tabelle1_1\""));
-            assertTrue(content.contains("table:name=\"Tabelle1_2\""));
+            assertTrue(content.contains("[Image 0123456789abcdef]"));
+            // every table row is a separate table with the column widths from the PDF
+            assertTrue(content.contains("table:name=\"Table1_1\""));
+            assertTrue(content.contains("table:name=\"Table1_2\""));
             assertTrue(content.contains("style:column-width=\"9.00cm\""));
         }
     }

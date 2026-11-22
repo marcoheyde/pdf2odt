@@ -26,7 +26,7 @@ class TableDetectorTest {
 
     @Test
     void simpleGrid() {
-        // 2 Spalten (x 0–100–200), 2 Zeilen (y 0–20–40)
+        // 2 columns (x 0–100–200), 2 rows (y 0–20–40)
         List<Segment> segments = grid(new float[] {0, 100, 200}, new float[] {0, 20, 40});
         List<Word> words = List.of(word("A", 10, 15), word("B", 110, 15), word("C", 10, 35), word("D", 110, 35));
 
@@ -46,7 +46,7 @@ class TableDetectorTest {
         }
         segments.add(new Segment(false, 0, 0, 40));
         segments.add(new Segment(false, 200, 0, 40));
-        segments.add(new Segment(false, 100, 0, 20)); // Trennlinie nur in der ersten Zeile
+        segments.add(new Segment(false, 100, 0, 20)); // separator only in the first row
 
         DetectedTable table = TableDetector.detect(segments, List.of(word("über", 50, 35))).getFirst();
 
@@ -62,7 +62,7 @@ class TableDetectorTest {
         assertTrue(TableDetector.detect(segments, List.of()).isEmpty());
     }
 
-    /** Ein PDF, dessen Tabellenlinien als schmale gefüllte Rechtecke gezeichnet sind. */
+    /** A PDF whose table lines are drawn as thin filled rectangles. */
     @Test
     void tableFromFilledRectangles() throws Exception {
         try (PDDocument doc = new PDDocument()) {

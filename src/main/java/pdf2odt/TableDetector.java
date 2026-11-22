@@ -9,19 +9,19 @@ import java.util.Set;
 import pdf2odt.GraphicsExtractor.Segment;
 import pdf2odt.PageExtractor.Word;
 
-/** Erkennt Tabellen an ihren Gitterlinien und ordnet die Wörter den Zellen zu. */
+/** Detects tables by their grid lines and assigns the words to the cells. */
 final class TableDetector {
 
-    /** Linien, die so nah beieinander liegen, gelten als dieselbe Linie bzw. als verbunden. */
+    /** Lines this close to each other count as the same line or as connected. */
     private static final float TOLERANCE = 3f;
 
-    /** Eine Zelle mit ihren Wörtern; verbundene Zellen überspannen mehrere Rasterzellen. */
+    /** A cell with its words; merged cells span several grid cells. */
     record WordCell(List<Word> words, int colSpan, int rowSpan) {
     }
 
     /**
-     * Eine erkannte Tabelle: Raster aus Zellen ({@code null} = von einer verbundenen Zelle überdeckt),
-     * Spaltenbreiten in pt, Oberkante und alle Wörter, die zu ihr gehören.
+     * A detected table: grid of cells ({@code null} = covered by a merged cell),
+     * column widths in pt, top edge and all words belonging to it.
      */
     record DetectedTable(float top, List<List<WordCell>> rows, List<Float> columnWidths, Set<Word> words) {
     }
@@ -40,9 +40,9 @@ final class TableDetector {
         return tables;
     }
 
-    // ---------------------------------------------------------------- Linien gruppieren
+    // ---------------------------------------------------------------- grouping lines
 
-    /** Fasst Linien zusammen, die sich (über andere Linien) berühren oder kreuzen. */
+    /** Groups lines that touch or cross each other (directly or via other lines). */
     static List<List<Segment>> connectedGroups(List<Segment> segments) {
         int n = segments.size();
         int[] parent = new int[n];
@@ -87,7 +87,7 @@ final class TableDetector {
                 && b.from() - TOLERANCE <= a.pos() && a.pos() <= b.to() + TOLERANCE;
     }
 
-    // ---------------------------------------------------------------- Raster und Zellen
+    // ---------------------------------------------------------------- grid and cells
 
     private static DetectedTable toTable(List<Segment> group, List<Word> words) {
         List<Segment> horizontal = group.stream().filter(Segment::horizontal).toList();
@@ -100,7 +100,7 @@ final class TableDetector {
         int rows = ys.length - 1;
         int cols = xs.length - 1;
 
-        // Benachbarte Rasterzellen ohne trennende Linie gehören zur selben (verbundenen) Zelle.
+        // Adjacent grid cells without a separating line belong to the same (merged) cell.
         int[] parent = new int[rows * cols];
         for (int i = 0; i < parent.length; i++) {
             parent[i] = i;
@@ -118,7 +118,7 @@ final class TableDetector {
             }
         }
 
-        // Ausdehnung jeder verbundenen Zelle; ihr Anker ist die Rasterzelle oben links.
+        // Extent of every merged cell; its anchor is the top left grid cell.
         int[] minR = new int[parent.length];
         int[] maxR = new int[parent.length];
         int[] minC = new int[parent.length];
@@ -135,7 +135,7 @@ final class TableDetector {
             }
         }
 
-        // Wörter nach ihrem Mittelpunkt den Zellen zuordnen.
+        // Assign words to cells by their centre point.
         List<List<Word>> cellWords = new ArrayList<>();
         for (int i = 0; i < parent.length; i++) {
             cellWords.add(new ArrayList<>());
@@ -170,7 +170,7 @@ final class TableDetector {
         return new DetectedTable(ys[0], table, widths, used);
     }
 
-    /** Sortierte, zusammengefasste Positionen der Linien (Zeilen- bzw. Spaltengrenzen). */
+    /** Sorted, merged positions of the lines (row or column boundaries). */
     private static float[] boundaries(List<Segment> segments) {
         float[] positions = new float[segments.size()];
         for (int i = 0; i < positions.length; i++) {
@@ -190,7 +190,7 @@ final class TableDetector {
         return array;
     }
 
-    /** Gibt es eine Linie bei {@code pos}, die die Stelle {@code at} überdeckt? */
+    /** Is there a line at {@code pos} that covers position {@code at}? */
     private static boolean covered(List<Segment> segments, float pos, float at) {
         for (Segment s : segments) {
             if (Math.abs(s.pos() - pos) <= TOLERANCE && s.from() - TOLERANCE <= at && at <= s.to() + TOLERANCE) {
@@ -200,7 +200,7 @@ final class TableDetector {
         return false;
     }
 
-    /** Index des Intervalls zwischen zwei Grenzen, das {@code value} enthält, sonst -1. */
+    /** Index of the interval between two boundaries containing {@code value}, otherwise -1. */
     private static int index(float[] bounds, float value) {
         for (int i = 0; i + 1 < bounds.length; i++) {
             if (bounds[i] <= value && value < bounds[i + 1]) {

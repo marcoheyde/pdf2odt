@@ -7,18 +7,18 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 
 /**
- * Wahrnehmungs-Hash (dHash): ändert sich bei inhaltlichen Bildänderungen,
- * aber nicht bei Neukomprimierung oder leichter Skalierung.
+ * Perceptual hash (dHash): changes when the image content changes,
+ * but not on recompression or slight scaling.
  */
 final class ImageHash {
 
-    /** Helligkeitsunterschied, unter dem ein Bild als einfarbig gilt. */
+    /** Brightness range below which an image counts as single-coloured. */
     private static final int BLANK_RANGE = 8;
 
     private ImageHash() {
     }
 
-    /** 64 Bit als 16 Hex-Zeichen. */
+    /** 64 bits as 16 hex characters. */
     static String of(BufferedImage image) {
         Raster small = small(image);
         long bits = 0;
@@ -33,7 +33,7 @@ final class ImageHash {
         return String.format("%016x", bits);
     }
 
-    /** Einfarbige Bilder (z. B. weiße Flächen als Teil einer Vektorzeichnung) tragen keine Information. */
+    /** Single-coloured images (e.g. white areas within a vector drawing) carry no information. */
     static boolean isBlank(BufferedImage image) {
         Raster small = small(image);
         int min = 255;
@@ -47,7 +47,7 @@ final class ImageHash {
         return max - min < BLANK_RANGE;
     }
 
-    /** Das Bild auf 9×8 Pixel in Graustufen verkleinert; Transparenz wie auf weißem Papier. */
+    /** The image scaled down to 9×8 grey pixels; transparency rendered as on white paper. */
     private static Raster small(BufferedImage image) {
         BufferedImage small = new BufferedImage(9, 8, BufferedImage.TYPE_BYTE_GRAY);
         Graphics2D g = small.createGraphics();

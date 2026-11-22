@@ -25,7 +25,7 @@ import pdf2odt.Model.Image;
 import pdf2odt.Model.Paragraph;
 import pdf2odt.Model.Table;
 
-/** Schreibt eine Blockfolge als ODT-Datei (ODF 1.3). */
+/** Writes a sequence of blocks as an ODT file (ODF 1.3). */
 final class OdtWriter {
 
     private static final String MIMETYPE = "application/vnd.oasis.opendocument.text";
@@ -64,10 +64,10 @@ final class OdtWriter {
     }
 
     private static String picturePath(int number) {
-        return "Pictures/bild" + number + ".png";
+        return "Pictures/image" + number + ".png";
     }
 
-    /** Der Eintrag "mimetype" muss als erster und unkomprimiert gespeichert werden. */
+    /** The "mimetype" entry must be stored first and uncompressed. */
     private static void writeMimetype(ZipOutputStream zip) throws IOException {
         byte[] bytes = MIMETYPE.getBytes(StandardCharsets.US_ASCII);
         CRC32 crc = new CRC32();
@@ -190,11 +190,11 @@ final class OdtWriter {
         w.writeEndElement();
     }
 
-    /** Je Tabelle ein Tabellen- und je Spalte ein Spaltenstil mit der Breite aus dem PDF; dazu ein Zellenrahmen. */
+    /** One table style per table and one column style per column with the width from the PDF; plus a cell border. */
     private static void writeTableStyles(XMLStreamWriter w, List<Table> tables) throws XMLStreamException {
         w.writeStartElement("office", "automatic-styles", OFFICE);
         w.writeStartElement("style", "style", STYLE);
-        w.writeAttribute("style", STYLE, "name", "Zelle");
+        w.writeAttribute("style", STYLE, "name", "Cell");
         w.writeAttribute("style", STYLE, "family", "table-cell");
         w.writeEmptyElement("style", "table-cell-properties", STYLE);
         w.writeAttribute("fo", FO, "border", "0.5pt solid #808080");
@@ -203,7 +203,7 @@ final class OdtWriter {
         for (int t = 0; t < tables.size(); t++) {
             List<Double> widths = tables.get(t).columnWidthsCm();
             w.writeStartElement("style", "style", STYLE);
-            w.writeAttribute("style", STYLE, "name", "Tabelle" + (t + 1));
+            w.writeAttribute("style", STYLE, "name", "Table" + (t + 1));
             w.writeAttribute("style", STYLE, "family", "table");
             w.writeEmptyElement("style", "table-properties", STYLE);
             w.writeAttribute("style", STYLE, "width", cm(widths.stream().mapToDouble(Double::doubleValue).sum()));
@@ -211,7 +211,7 @@ final class OdtWriter {
             w.writeEndElement();
             for (int c = 0; c < widths.size(); c++) {
                 w.writeStartElement("style", "style", STYLE);
-                w.writeAttribute("style", STYLE, "name", "Tabelle" + (t + 1) + "." + (c + 1));
+                w.writeAttribute("style", STYLE, "name", "Table" + (t + 1) + "." + (c + 1));
                 w.writeAttribute("style", STYLE, "family", "table-column");
                 w.writeEmptyElement("style", "table-column-properties", STYLE);
                 w.writeAttribute("style", STYLE, "column-width", cm(widths.get(c)));
@@ -238,19 +238,19 @@ final class OdtWriter {
     }
 
     /**
-     * Jede Tabellenzeile wird eine eigene einzeilige Tabelle: der Writer-Vergleich markiert sonst
-     * bei jeder Änderung die ganze Tabelle, so nur die betroffene Zeile. Zellen, die über mehrere
-     * Zeilen verbunden sind, stehen daher nur in ihrer ersten Zeile.
+     * Every table row becomes a separate single-row table: otherwise the Writer comparison marks the
+     * whole table on any change, this way only the affected row. Cells merged across several rows
+     * therefore appear only in their first row.
      */
     private static void writeTable(XMLStreamWriter w, Table t, int number) throws XMLStreamException {
         int columns = t.columnWidthsCm().size();
         for (int r = 0; r < t.rows().size(); r++) {
             w.writeStartElement("table", "table", TABLE);
-            w.writeAttribute("table", TABLE, "name", "Tabelle" + number + "_" + (r + 1));
-            w.writeAttribute("table", TABLE, "style-name", "Tabelle" + number);
+            w.writeAttribute("table", TABLE, "name", "Table" + number + "_" + (r + 1));
+            w.writeAttribute("table", TABLE, "style-name", "Table" + number);
             for (int c = 0; c < columns; c++) {
                 w.writeEmptyElement("table", "table-column", TABLE);
-                w.writeAttribute("table", TABLE, "style-name", "Tabelle" + number + "." + (c + 1));
+                w.writeAttribute("table", TABLE, "style-name", "Table" + number + "." + (c + 1));
             }
             w.writeStartElement("table", "table-row", TABLE);
             List<Cell> row = t.rows().get(r);
@@ -258,7 +258,7 @@ final class OdtWriter {
                 Cell cell = row.get(c);
                 int span = cell == null ? 1 : Math.min(cell.colSpan(), columns - c);
                 w.writeStartElement("table", "table-cell", TABLE);
-                w.writeAttribute("table", TABLE, "style-name", "Zelle");
+                w.writeAttribute("table", TABLE, "style-name", "Cell");
                 w.writeAttribute("office", OFFICE, "value-type", "string");
                 if (span > 1) {
                     w.writeAttribute("table", TABLE, "number-columns-spanned", String.valueOf(span));
@@ -282,7 +282,7 @@ final class OdtWriter {
         w.writeStartElement("text", "p", TEXT);
         w.writeAttribute("text", TEXT, "style-name", "Standard");
         w.writeStartElement("draw", "frame", DRAW);
-        w.writeAttribute("draw", DRAW, "name", "Bild" + number);
+        w.writeAttribute("draw", DRAW, "name", "Image" + number);
         w.writeAttribute("text", TEXT, "anchor-type", "as-char");
         w.writeAttribute("svg", SVG, "width", cm(i.widthCm()));
         w.writeAttribute("svg", SVG, "height", cm(i.heightCm()));
@@ -293,14 +293,14 @@ final class OdtWriter {
         w.writeAttribute("xlink", XLINK, "actuate", "onLoad");
         w.writeEndElement();
         w.writeEndElement();
-        writeParagraph(w, "[Bild " + i.hash() + "]");
+        writeParagraph(w, "[Image " + i.hash() + "]");
     }
 
     private static String cm(double value) {
         return String.format(Locale.ROOT, "%.2fcm", value);
     }
 
-    // ---------------------------------------------------------------- XML-Hilfen
+    // ---------------------------------------------------------------- XML helpers
 
     private interface XmlBody {
         void write(XMLStreamWriter w) throws XMLStreamException;

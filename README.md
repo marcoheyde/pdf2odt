@@ -1,38 +1,52 @@
 # pdf2odt
 
-Konvertiert PDF-Schnittstellenbeschreibungen in ODT-Dateien, damit zwei Versionen in
-LibreOffice Writer mit *Bearbeiten → Änderungen verfolgen → Dokument vergleichen*
-verglichen werden können. Ziel ist ein gut vergleichbarer Text, kein originalgetreues Layout.
+Converts PDF interface specifications into ODT files so that two versions can be compared in
+LibreOffice Writer with *Edit → Track Changes → Compare Document*. The goal is text that compares
+well, not a faithful reproduction of the layout.
 
-## Bauen und Aufruf
+## Build and run
 
-Voraussetzungen: Java 25, Maven 3.
+Requirements: Java 25, Maven 3.
 
 ```bash
 mvn package
-java -jar target/pdf2odt-0.1.0-SNAPSHOT.jar eingabe.pdf ausgabe.odt
+java -jar target/pdf2odt-0.1.0-SNAPSHOT.jar input.pdf output.odt
 ```
 
-## Was übernommen wird
+## What is converted
 
-- **Absätze:** Ein neuer Absatz beginnt, wenn der Zeilenabstand deutlich über dem im Dokument
-  üblichen liegt (gemessen getrennt für Fließtext und Tabellenzellen), und bei jedem
-  Aufzählungspunkt. Silbentrennungen am Zeilenende werden aufgelöst, wenn das Wort sonst
-  ungetrennt im Dokument vorkommt.
-- **Kopf- und Fußzeilen** werden entfernt: oberste bzw. unterste Zeile im Randbereich, die auf
-  mindestens 20 % der Seiten gleich beginnt (Seitenzahlen zählen nicht).
-- **Seitenumbrüche:** Ein Absatz ohne Satzende wird mit dem Anfang der Folgeseite verbunden,
-  eine Tabelle mit ihrer Fortsetzung (wiederholte Kopfzeile entfällt).
-- Das Inhaltsverzeichnis bleibt als normaler Text erhalten.
-- **Überschriften:** fette Zeilen, die größer als der Fließtext oder mehrstufig nummeriert sind
-  (`2.2.1`, `Anlage A.1`). Die Gliederungsebene folgt aus der Nummerierung
+- **Paragraphs:** A new paragraph starts when the line distance is clearly larger than usual in the
+  document (measured separately for body text and table cells) and at every list item. Hyphenation
+  at line ends is resolved if the word occurs unhyphenated elsewhere in the document. Characters of
+  the Symbol and Wingdings fonts used in lists are translated into real characters (•, ▪, ➢, →).
+- **Page headers and footers** are removed: the top or bottom line in the margin zone that starts
+  the same way on at least 20 % of the pages (page numbers are ignored).
+- **Page breaks:** A paragraph without a sentence end is joined with the start of the next page,
+  a table with its continuation (the repeated header row is dropped).
+- The table of contents is kept as normal text.
+- **Headings:** bold lines that are larger than body text or have multi-level numbering
+  (`2.2.1`, `Anlage A.1`). The outline level follows from the numbering
   (`Teil A` → 1, `3` → 2, `3.1` → 3, `Anlage A` → 2, `Anlage A.1` → 3).
-  Seiten mit vielen Füllpunkt-Zeilen (Inhaltsverzeichnis) enthalten keine Überschriften.
-- **Tabellen:** werden an ihren Gitterlinien erkannt, einschließlich verbundener Zellen.
-  Jede Tabellenzeile wird als eigene einzeilige Tabelle geschrieben (mit gleichen Spaltenbreiten,
-  sieht daher wie eine Tabelle aus): Der Writer-Vergleich markiert sonst bei jeder Änderung die
-  ganze Tabelle, so nur die betroffene Zeile. Über mehrere Zeilen verbundene Zellen stehen nur in
-  ihrer ersten Zeile.
-- **Bilder:** werden als PNG übernommen. Unter jedem Bild steht eine Zeile `[Bild <hash>]`
-  mit einem Wahrnehmungs-Hash. Ändert sich ein Bild inhaltlich, ändert sich diese Zeile,
-  und der Writer-Vergleich zeigt die Änderung an. Einfarbige Bilder werden weggelassen.
+  Pages with many dot-leader lines (table of contents) contain no headings.
+- **Tables:** are detected by their grid lines, including merged cells. Every table row is written
+  as a separate single-row table (with identical column widths, so it still looks like one table):
+  otherwise the Writer comparison marks the whole table on any change, this way only the affected
+  row. Cells merged across several rows appear only in their first row.
+- **Images:** are converted to PNG (including JPEG2000). Below every image there is a line
+  `[Image <hash>]` with a perceptual hash. If an image changes in content, this line changes and the
+  Writer comparison shows the change. Single-coloured images are omitted.
+
+## Measuring comparison quality
+
+The scripts in `tools/` measure how many words Writer marks compared to the real changes
+(requires LibreOffice and `python3-uno`):
+
+```bash
+python3 tools/dump.py old.odt > old.txt
+python3 tools/dump.py new.odt > new.txt
+python3 tools/wordiff.py old.txt new.txt               # real changes (ignoring paragraph boundaries)
+python3 tools/compare.py old.odt new.odt result.json   # words marked by Writer
+```
+
+The closer the number of words marked by Writer is to the number of real changes, the less noise
+the comparison contains. Comparing a file with itself must yield 0 changes.

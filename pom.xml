@@ -19,7 +19,7 @@
             <artifactId>pdfbox</artifactId>
             <version>3.0.5</version>
         </dependency>
-        <!-- JPEG2000-Bilder (JPXDecode) lesen; ohne dieses Modul überspringt PDFBox sie. -->
+        <!-- Reads JPEG2000 images (JPXDecode); without this module PDFBox skips them. -->
         <dependency>
             <groupId>com.github.jai-imageio</groupId>
             <artifactId>jai-imageio-jpeg2000</artifactId>

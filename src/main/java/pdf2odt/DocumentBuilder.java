@@ -22,16 +22,16 @@ import pdf2odt.PageExtractor.Word;
 import pdf2odt.TableDetector.DetectedTable;
 
 /**
- * Setzt das Dokument aus den Seiten zusammen: ermittelt Kennzahlen des ganzen Dokuments,
- * entfernt Kopf- und Fußzeilen und führt Absätze und Tabellen über Seitenumbrüche zusammen.
+ * Assembles the document from its pages: determines document-wide metrics, removes page headers
+ * and footers, and joins paragraphs and tables across page breaks.
  */
 final class DocumentBuilder {
 
-    /** Eine Kopf-/Fußzeile steht auf mindestens diesem Anteil der Seiten. */
+    /** A page header/footer appears on at least this share of the pages. */
     private static final double HEADER_PAGE_SHARE = 0.2;
-    /** Kopf-/Fußzeilen stehen im oberen bzw. unteren Randbereich dieses Anteils der Seitenhöhe. */
+    /** Page headers/footers lie within this share of the page height at the top or bottom. */
     private static final float EDGE_ZONE = 0.1f;
-    /** Spaltenbreiten, die sich höchstens so viel unterscheiden, gelten als gleich (cm). */
+    /** Column widths differing by at most this much are considered equal (cm). */
     private static final double SAME_WIDTH_CM = 0.1;
 
     private DocumentBuilder() {
@@ -71,12 +71,12 @@ final class DocumentBuilder {
         return merge(pageBlocks, ctx.vocabulary());
     }
 
-    // ---------------------------------------------------------------- Kopf- und Fußzeilen
+    // ---------------------------------------------------------------- page headers and footers
 
     /**
-     * Entfernt die oberste bzw. unterste Zeile einer Seite, wenn sie im Randbereich steht und auf vielen
-     * Seiten gleich beginnt (Ziffern wie Seitenzahlen zählen dabei nicht). Die genaue Höhe zählt nicht,
-     * da Word sie je Abschnitt unterschiedlich setzen kann.
+     * Removes the top or bottom line of a page if it lies in the margin zone and starts the same way on
+     * many pages (digits such as page numbers are ignored). The exact height is ignored because Word may
+     * place it differently per section.
      */
     static void removeHeadersAndFooters(List<List<Word>> pages, List<Float> pageHeights) {
         Map<String, Integer> count = new HashMap<>();
@@ -86,10 +86,10 @@ final class DocumentBuilder {
             List<Line> lines = PageBuilder.lines(pages.get(i));
             float margin = pageHeights.get(i) * EDGE_ZONE;
             if (!lines.isEmpty() && lines.getFirst().top() < margin) {
-                edge.put("oben|" + start(lines.getFirst()), lines.getFirst());
+                edge.put("top|" + start(lines.getFirst()), lines.getFirst());
             }
             if (!lines.isEmpty() && lines.getLast().baseline() > pageHeights.get(i) - margin) {
-                edge.put("unten|" + start(lines.getLast()), lines.getLast());
+                edge.put("bottom|" + start(lines.getLast()), lines.getLast());
             }
             candidates.add(edge);
             edge.keySet().forEach(key -> count.merge(key, 1, Integer::sum));
@@ -104,14 +104,14 @@ final class DocumentBuilder {
         }
     }
 
-    /** Die ersten beiden Wörter, Ziffern ersetzt. */
+    /** The first two words, digits replaced. */
     private static String start(Line line) {
         return String.join(" ", line.words().stream().limit(2).map(Word::text).toList()).replaceAll("\\d", "#");
     }
 
-    // ---------------------------------------------------------------- Kennzahlen
+    // ---------------------------------------------------------------- metrics
 
-    /** Die Schriftgröße, in der die meisten Zeichen des Dokuments stehen. */
+    /** The font size used by most characters of the document. */
     static float bodySize(List<List<Word>> pages) {
         Map<Float, Integer> chars = new HashMap<>();
         for (List<Word> page : pages) {
@@ -122,7 +122,7 @@ final class DocumentBuilder {
         return mode(chars, 10f);
     }
 
-    /** Der häufigste Grundlinienabstand aufeinanderfolgender Zeilen in Fließtextgröße. */
+    /** The most frequent baseline distance between consecutive lines in body text size. */
     static float pitch(List<List<Word>> regions, float bodySize) {
         Map<Float, Integer> gaps = new HashMap<>();
         for (List<Word> region : regions) {
@@ -158,12 +158,12 @@ final class DocumentBuilder {
         return words;
     }
 
-    // ---------------------------------------------------------------- Seitenübergänge
+    // ---------------------------------------------------------------- page transitions
 
     /**
-     * Hängt die Seiten aneinander. Ein Absatz ohne Satzende wird mit dem ersten Absatz der Folgeseite
-     * verbunden, eine Tabelle mit einer gleich aufgebauten Tabelle am Anfang der Folgeseite
-     * (deren wiederholte Kopfzeile entfällt).
+     * Concatenates the pages. A paragraph without a sentence end is joined with the first paragraph of the
+     * next page, a table with an identically structured table at the start of the next page (dropping its
+     * repeated header row).
      */
     static List<Block> merge(List<List<Block>> pages, Set<String> vocabulary) {
         List<Block> result = new ArrayList<>();
@@ -181,7 +181,7 @@ final class DocumentBuilder {
         return result;
     }
 
-    /** Die verbundenen Blöcke oder {@code null}, wenn sie nicht zusammengehören. */
+    /** The joined block, or {@code null} if the blocks do not belong together. */
     private static Block mergeBlocks(Block last, Block first, Set<String> vocabulary) {
         if (last instanceof Paragraph a && first instanceof Paragraph b
                 && !a.text().matches("(?s).*[.:;!?]$") && !b.text().matches("^[•\\-–] .*")) {
