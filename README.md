@@ -22,7 +22,9 @@ java -jar target/pdf2odt-0.1.0-SNAPSHOT.jar input.pdf output.odt
 - **Page headers and footers** are removed: the top or bottom line in the margin zone that starts
   the same way on at least 20 % of the pages (page numbers are ignored).
 - **Page breaks:** A paragraph without a sentence end is joined with the start of the next page,
-  a table with its continuation (the repeated header row is dropped).
+  a table with its continuation (the repeated header row is dropped). A table row split by the page
+  break is joined again: the continuation row has an empty first cell and at least one cell of the
+  previous row ends without a sentence end.
 - The table of contents is kept as normal text.
 - **Headings:** bold lines that are larger than body text or have multi-level numbering
   (`2.2.1`, `Anlage A.1`). The outline level follows from the numbering

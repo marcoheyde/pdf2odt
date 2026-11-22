@@ -157,7 +157,7 @@ final class DocumentBuilder {
     /**
      * Concatenates the pages. A paragraph without a sentence end is joined with the first paragraph of the
      * next page, a table with an identically structured table at the start of the next page (dropping its
-     * repeated header row).
+     * repeated header row and joining a row that was split by the page break).
      */
     static List<Block> merge(List<List<Block>> pages, Set<String> vocabulary) {
         List<Block> result = new ArrayList<>();
@@ -178,7 +178,7 @@ final class DocumentBuilder {
     /** The joined block, or {@code null} if the blocks do not belong together. */
     private static Block mergeBlocks(Block last, Block first, Set<String> vocabulary) {
         if (last instanceof Paragraph a && first instanceof Paragraph b
-                && !a.text().matches("(?s).*[.:;!?]$") && !b.text().matches("^[•\\-–] .*")) {
+                && !endsSentence(a.text()) && !b.text().matches("^[•\\-–] .*")) {
             return new Paragraph(PageBuilder.joinText(a.text(), b.text(), vocabulary));
         }
         if (last instanceof Table a && first instanceof Table b && sameColumns(a, b)) {
@@ -187,10 +187,57 @@ final class DocumentBuilder {
             if (!continuation.isEmpty() && continuation.getFirst().equals(a.rows().getFirst())) {
                 continuation = continuation.subList(1, continuation.size());
             }
+            if (!continuation.isEmpty() && continuesRow(rows.getLast(), continuation.getFirst())) {
+                rows.set(rows.size() - 1, joinRows(rows.getLast(), continuation.getFirst(), vocabulary));
+                continuation = continuation.subList(1, continuation.size());
+            }
             rows.addAll(continuation);
             return new Table(rows, a.columnWidthsCm());
         }
         return null;
+    }
+
+    /**
+     * Is {@code next} the rest of {@code last}, split by a page break? Its first (key) cell is empty while
+     * that of {@code last} is not, both have the same cell structure, and at least one cell of {@code last}
+     * that continues in {@code next} ends without a sentence end.
+     */
+    private static boolean continuesRow(List<Cell> last, List<Cell> next) {
+        if (last.size() != next.size() || last.getFirst() == null || next.getFirst() == null
+                || last.getFirst().text().isEmpty() || !next.getFirst().text().isEmpty()) {
+            return false;
+        }
+        boolean brokenSentence = false;
+        for (int i = 0; i < last.size(); i++) {
+            if ((last.get(i) == null) != (next.get(i) == null)) {
+                return false;
+            }
+            if (next.get(i) != null && !next.get(i).text().isEmpty() && !endsSentence(last.get(i).text())) {
+                brokenSentence = true;
+            }
+        }
+        return brokenSentence;
+    }
+
+    /** Joins the cell texts of a row split by a page break; spans are taken from the first part. */
+    private static List<Cell> joinRows(List<Cell> last, List<Cell> next, Set<String> vocabulary) {
+        List<Cell> row = new ArrayList<>();
+        for (int i = 0; i < last.size(); i++) {
+            Cell a = last.get(i);
+            Cell b = next.get(i);
+            if (a == null) {
+                row.add(null);
+            } else if (b.text().isEmpty() || a.text().isEmpty()) {
+                row.add(new Cell(a.text() + b.text(), a.colSpan(), a.rowSpan()));
+            } else {
+                row.add(new Cell(PageBuilder.joinText(a.text(), b.text(), vocabulary), a.colSpan(), a.rowSpan()));
+            }
+        }
+        return row;
+    }
+
+    private static boolean endsSentence(String text) {
+        return text.matches("(?s).*[.:;!?]$");
     }
 
     private static boolean sameColumns(Table a, Table b) {

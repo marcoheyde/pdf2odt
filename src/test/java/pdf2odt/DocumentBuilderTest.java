@@ -63,6 +63,35 @@ class DocumentBuilderTest {
     }
 
     @Test
+    void rowSplitByPageBreakIsJoined() {
+        List<Cell> header = row("Abschnitt", "Beschreibung", "Ergänzung");
+        Table first = new Table(List.of(header,
+                row("4.3.2", "Die Parameter sind verpflichtend zu", "Wird GeneralizedTime verwendet.")),
+                List.of(2.0, 7.0, 7.0));
+        Table second = new Table(List.of(header,
+                row("", "nutzen, so sind sie anzugeben.", ""), row("6.1", "Events", "")),
+                List.of(2.0, 7.0, 7.0));
+
+        Table merged = (Table) DocumentBuilder.merge(List.of(List.of(first), List.of(second)), Set.of()).getFirst();
+
+        assertEquals(List.of(header,
+                row("4.3.2", "Die Parameter sind verpflichtend zu nutzen, so sind sie anzugeben.",
+                        "Wird GeneralizedTime verwendet."),
+                row("6.1", "Events", "")), merged.rows());
+    }
+
+    @Test
+    void rowWithEmptyKeyCellAfterCompleteRowIsKept() {
+        List<Cell> header = row("Abschnitt", "Beschreibung");
+        Table first = new Table(List.of(header, row("5.1", "Vollständiger Satz.")), List.of(2.0, 7.0));
+        Table second = new Table(List.of(header, row("", "Eigene Unterzeile.")), List.of(2.0, 7.0));
+
+        Table merged = (Table) DocumentBuilder.merge(List.of(List.of(first), List.of(second)), Set.of()).getFirst();
+
+        assertEquals(3, merged.rows().size());
+    }
+
+    @Test
     void hyphenationIsResolvedOnlyForKnownWords() {
         Set<String> vocabulary = Set.of("technische", "ip", "basierten");
         assertEquals("die technische Umsetzung", PageBuilder.joinText("die techni-", "sche Umsetzung", vocabulary));
