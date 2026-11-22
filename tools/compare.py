@@ -59,6 +59,10 @@ def main():
         smgr = ctx.ServiceManager
         desktop = smgr.createInstanceWithContext('com.sun.star.frame.Desktop', ctx)
         doc = desktop.loadComponentFromURL(uno.systemPathToFileUrl(new), '_blank', 0, (prop('Hidden', True),))
+        if doc is None:
+            desktop.terminate()
+            proc.wait(timeout=60)
+            sys.exit(f'Cannot open {new} (is it open in another LibreOffice window?)')
         dispatcher = smgr.createInstanceWithContext('com.sun.star.frame.DispatchHelper', ctx)
         dispatcher.executeDispatch(doc.getCurrentController().getFrame(), '.uno:CompareDocuments', '', 0,
                                    (prop('URL', uno.systemPathToFileUrl(old)), prop('NoAcceptDialog', True)))

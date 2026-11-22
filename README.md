@@ -39,6 +39,12 @@ java -jar target/pdf2odt-0.1.0-SNAPSHOT.jar input.pdf output.odt
 - **Images:** are converted to PNG (including JPEG2000). Below every image there is a line
   `[Image <hash>]` with a perceptual hash. If an image changes in content, this line changes and the
   Writer comparison shows the change. Single-coloured images are omitted.
+- **Vector drawings** (and drawings composed of many small images) are rendered as one image, so that
+  their boxes are not taken for tables and their labels not for text. All painted elements are grouped
+  (curves, diagonal lines and images close to each other, and any elements touching each other, e.g. an
+  arrow line and its arrow head); a group with at least 5 curves, diagonal lines or images is a drawing,
+  grown by the labels touching it. Tables consist of straight lines only and are not affected. Changes of
+  the label texts are only visible via the image hash.
 
 ## Measuring comparison quality
 

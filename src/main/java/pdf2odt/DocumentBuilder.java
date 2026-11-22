@@ -1,5 +1,7 @@
 package pdf2odt;
 
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,8 +12,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.rendering.PDFRenderer;
 
 import pdf2odt.GraphicsExtractor.Graphics;
+import pdf2odt.GraphicsExtractor.PlacedImage;
+import pdf2odt.GraphicsExtractor.Segment;
 import pdf2odt.Model.Block;
 import pdf2odt.Model.Cell;
 import pdf2odt.Model.Paragraph;
@@ -43,9 +49,11 @@ final class DocumentBuilder {
         List<List<DetectedTable>> tables = new ArrayList<>();
         List<List<Word>> flow = new ArrayList<>();
         List<Float> heights = new ArrayList<>();
+        PDFRenderer renderer = new PDFRenderer(doc);
         for (int i = 0; i < pages.size(); i++) {
-            heights.add(doc.getPage(i).getCropBox().getHeight());
-            Graphics g = GraphicsExtractor.extract(doc.getPage(i));
+            PDRectangle box = doc.getPage(i).getCropBox();
+            heights.add(box.getHeight());
+            Graphics g = withFigures(GraphicsExtractor.extract(doc.getPage(i)), pages.get(i), box, renderer, i);
             List<DetectedTable> pageTables = TableDetector.detect(g.segments(), pages.get(i));
             List<Word> pageFlow = new ArrayList<>(pages.get(i));
             pageTables.forEach(t -> pageFlow.removeAll(t.words()));
@@ -63,6 +71,34 @@ final class DocumentBuilder {
             pageBlocks.add(PageBuilder.build(flow.get(i), graphics.get(i).images(), tables.get(i), ctx));
         }
         return merge(pageBlocks, ctx.vocabulary());
+    }
+
+    /**
+     * Replaces the drawings of a page by rendered images: the lines, images and words inside a drawing
+     * are removed (words directly from {@code words}), the drawing is added as one image.
+     */
+    private static Graphics withFigures(Graphics g, List<Word> words, PDRectangle box, PDFRenderer renderer,
+            int pageIndex) throws IOException {
+        List<Rectangle2D> wordBoxes = words.stream()
+                .<Rectangle2D>map(w -> new Rectangle2D.Double(w.x(), w.top(), w.right() - w.x(), w.baseline() - w.top()))
+                .toList();
+        List<Rectangle2D> figures = FigureDetector.detect(g.marks(), g.shapes(), wordBoxes, box.getWidth(),
+                box.getHeight());
+        if (figures.isEmpty()) {
+            return g;
+        }
+        words.removeIf(w -> FigureDetector.inside(figures, (w.x() + w.right()) / 2, (w.top() + w.baseline()) / 2));
+        List<Segment> segments = g.segments().stream().filter(s -> !FigureDetector.inside(figures,
+                s.horizontal() ? (s.from() + s.to()) / 2 : s.pos(), s.horizontal() ? s.pos() : (s.from() + s.to()) / 2))
+                .toList();
+        List<PlacedImage> images = new ArrayList<>(g.images().stream()
+                .filter(i -> !FigureDetector.inside(figures, i.bounds().getCenterX(), i.bounds().getCenterY()))
+                .toList());
+        BufferedImage page = FigureDetector.renderPage(renderer, pageIndex);
+        for (Rectangle2D figure : figures) {
+            images.add(FigureDetector.cut(page, figure));
+        }
+        return new Graphics(images, segments, g.marks(), g.shapes());
     }
 
     // ---------------------------------------------------------------- page headers and footers
