@@ -10,7 +10,14 @@ Requirements: Java 25, Maven 3.
 
 ```bash
 mvn package
-java -jar target/pdf2odt-0.1.0-SNAPSHOT.jar input.pdf output.odt
+java -jar target/pdf2odt.jar input.pdf output.odt
+```
+
+`target/pdf2odt.jar` is a self-contained jar with all dependencies. It is pure Java without native code
+and runs on Linux, Windows and macOS with Java 25, e.g. on Windows:
+
+```bat
+java -jar pdf2odt.jar "C:\Specs\Version 9.0.pdf" "C:\Specs\Version 9.0.odt"
 ```
 
 ## What is converted
