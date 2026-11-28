@@ -1,3 +1,4 @@
 target/
 samples/
 *.odt
+!docs/example/*.odt

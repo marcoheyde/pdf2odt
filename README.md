@@ -4,6 +4,12 @@ Converts PDF interface specifications into ODT files so that two versions can be
 LibreOffice Writer with *Edit → Track Changes → Compare Document*. The goal is text that compares
 well, not a faithful reproduction of the layout.
 
+## Download
+
+The ready-to-use jar is attached to the
+[latest release on GitHub](https://github.com/marcoheyde/pdf2odt/releases/latest):
+[pdf2odt.jar](https://github.com/marcoheyde/pdf2odt/releases/latest/download/pdf2odt.jar)
+
 ## Build and run
 
 Requirements: Java 25, Maven 3.
@@ -19,6 +25,9 @@ and runs on Linux, Windows and macOS with Java 25, e.g. on Windows:
 ```bat
 java -jar pdf2odt.jar "C:\Specs\Version 9.0.pdf" "C:\Specs\Version 9.0.odt"
 ```
+
+An example with screenshots is on the project website (GitHub Pages, source in `docs/`):
+https://marcoheyde.github.io/pdf2odt/
 
 ## What is converted
 

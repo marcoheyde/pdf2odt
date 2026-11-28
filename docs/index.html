@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pdf2odt</title>
+<meta name="description" content="Convert PDF interface specifications to ODT and compare two versions in LibreOffice Writer.">
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f5f7fa;
+    --text: #1d2430;
+    --muted: #5a6475;
+    --border: #d9dee6;
+    --accent: #1f5fa8;
+    --code-bg: #eef1f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15191f;
+      --surface: #1d232b;
+      --text: #e4e8ee;
+      --muted: #9aa5b5;
+      --border: #333c48;
+      --accent: #6aa7ec;
+      --code-bg: #232a33;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  main, header, footer { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  header { padding-top: 48px; padding-bottom: 8px; }
+  h1 { font-size: 2.2rem; margin: 0 0 8px; letter-spacing: -0.01em; }
+  h2 { font-size: 1.4rem; margin: 48px 0 12px; }
+  h3 { font-size: 1.05rem; margin: 0 0 8px; }
+  p { margin: 0 0 12px; }
+  a { color: var(--accent); }
+  .lead { font-size: 1.15rem; color: var(--muted); max-width: 760px; }
+  .button {
+    display: inline-block; margin: 12px 8px 0 0; padding: 8px 16px; border-radius: 6px;
+    background: var(--accent); color: #fff; text-decoration: none; font-weight: 600;
+    border: 1px solid var(--accent);
+  }
+  .button.secondary { background: transparent; color: var(--accent); }
+  .steps { counter-reset: step; }
+  .step { margin: 32px 0; }
+  .step > h3::before {
+    counter-increment: step; content: counter(step);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.6em; height: 1.6em; margin-right: 8px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: 0.85em;
+  }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 720px) { .pair { grid-template-columns: 1fr; } }
+  figure { margin: 0; }
+  figure img {
+    display: block; width: 100%; height: auto; background: #fff;
+    border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  figure.result { max-width: 840px; }
+  figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 8px; }
+  pre, code { font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+  pre {
+    background: var(--code-bg); padding: 12px 16px; border-radius: 6px;
+    overflow-x: auto; font-size: 0.9rem; margin: 0 0 12px;
+  }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+  pre code { background: none; padding: 0; }
+  ul { padding-left: 22px; margin: 0 0 12px; }
+  li { margin-bottom: 6px; }
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+  footer { margin-top: 64px; padding-top: 16px; padding-bottom: 32px; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>pdf2odt</h1>
+  <p class="lead">Compare two versions of a PDF interface specification in LibreOffice Writer.
+    pdf2odt converts each PDF into an ODT document that is built for comparison, so that
+    <em>Edit → Track Changes → Compare Document</em> marks the real content changes.</p>
+  <a class="button" href="https://github.com/marcoheyde/pdf2odt/releases/latest/download/pdf2odt.jar">Download pdf2odt.jar</a>
+  <a class="button secondary" href="https://github.com/marcoheyde/pdf2odt">Source code on GitHub</a>
+</header>
+
+<main>
+
+  <h2>Example</h2>
+  <div class="steps">
+
+    <section class="step">
+      <h3>Two versions of a specification as PDF</h3>
+      <p>Version 1.1 of a (fictitious) order service interface differs from version 1.0 in a few places:
+        a sentence was extended, a list item removed, field types and descriptions changed, a table row added,
+        a time-out shortened, and the diagram got a new component.</p>
+      <div class="pair">
+        <figure>
+          <img src="images/pdf-1.0.png" width="749" height="789" alt="PDF of version 1.0 of the order service interface">
+          <figcaption>Version 1.0 (<a href="example/order-interface-1.0.pdf">PDF</a>)</figcaption>
+        </figure>
+        <figure>
+          <img src="images/pdf-1.1.png" width="749" height="812" alt="PDF of version 1.1 of the order service interface">
+          <figcaption>Version 1.1 (<a href="example/order-interface-1.1.pdf">PDF</a>)</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="step">
+      <h3>Convert both PDFs to ODT</h3>
+<pre><code>java -jar pdf2odt.jar order-interface-1.0.pdf order-interface-1.0.odt
+java -jar pdf2odt.jar order-interface-1.1.pdf order-interface-1.1.odt</code></pre>
+      <p>Result: <a href="example/order-interface-1.0.odt">order-interface-1.0.odt</a>,
+        <a href="example/order-interface-1.1.odt">order-interface-1.1.odt</a></p>
+    </section>
+
+    <section class="step">
+      <h3>Compare the ODT files in LibreOffice Writer</h3>
+      <p>Open <code>order-interface-1.1.odt</code> in Writer and choose
+        <em>Edit → Track Changes → Compare Document</em> with <code>order-interface-1.0.odt</code>.
+        Writer marks inserted text underlined and deleted text struck through, with change bars in the margin:</p>
+      <figure class="result">
+        <img src="images/writer-comparison.png" width="829" height="969"
+             alt="LibreOffice Writer comparison of both versions with inserted and deleted text marked">
+        <figcaption>Comparison result in LibreOffice Writer (version 1.1 compared with 1.0).
+          Changed words are marked individually; changed table rows appear as deleted and inserted rows;
+          the changed diagram shows up as a changed <code>[Image …]</code> line.</figcaption>
+      </figure>
+    </section>
+
+  </div>
+
+  <h2>What the conversion does</h2>
+  <div class="features">
+    <div class="card">
+      <h3>Text and headings</h3>
+      <p>Paragraphs are rebuilt from the line spacing, hyphenation is resolved, and headings with their
+        outline level are recognised from bold fonts and numbering.</p>
+    </div>
+    <div class="card">
+      <h3>Tables</h3>
+      <p>Tables are detected by their grid lines, including merged cells. Tables and rows split by a page
+        break are joined, repeated header rows dropped.</p>
+    </div>
+    <div class="card">
+      <h3>Images and drawings</h3>
+      <p>Images and vector drawings become images with a perceptual hash below them, so that a changed
+        image is visible as a changed line of text.</p>
+    </div>
+    <div class="card">
+      <h3>Less noise</h3>
+      <p>Page headers and footers are removed and paragraphs are joined across page breaks, so that page
+        layout differences are not marked as changes.</p>
+    </div>
+  </div>
+
+  <h2>Usage</h2>
+  <p>Requirements: Java 25 (Linux, Windows or macOS).
+    Download <a href="https://github.com/marcoheyde/pdf2odt/releases/latest/download/pdf2odt.jar">pdf2odt.jar</a>
+    from the <a href="https://github.com/marcoheyde/pdf2odt/releases/latest">latest release on GitHub</a> and run:</p>
+<pre><code>java -jar pdf2odt.jar input.pdf output.odt</code></pre>
+  <p>Or build the self-contained jar yourself with Maven:</p>
+<pre><code>mvn package
+java -jar target/pdf2odt.jar input.pdf output.odt</code></pre>
+
+  <h2>Limitations</h2>
+  <ul>
+    <li>LibreOffice Writer compares tables only as a whole. pdf2odt therefore writes every table row as a
+      separate table, so a change marks the affected row, not single words within it.</li>
+    <li>Tables are only recognised if they have grid lines.</li>
+    <li>Labels inside drawings are part of the image; small changes there may not change the image hash.</li>
+    <li>The goal is comparable text, not a faithful reproduction of the PDF layout.</li>
+  </ul>
+
+</main>
+
+<footer>
+  pdf2odt · <a href="https://github.com/marcoheyde/pdf2odt">github.com/marcoheyde/pdf2odt</a> ·
+  <a href="https://github.com/marcoheyde/pdf2odt/releases">Releases</a>
+</footer>
+
+</body>
+</html>

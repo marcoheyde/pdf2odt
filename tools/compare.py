@@ -1,7 +1,8 @@
 """Compares two ODT files with LibreOffice like "Edit > Track Changes > Compare Document"
-and writes all marked changes as JSON.
+and writes all marked changes as JSON. Optionally the compared document with all marked changes is
+saved as PDF (e.g. for screenshots).
 
-Usage:  python3 tools/compare.py old.odt new.odt result.json
+Usage:  python3 tools/compare.py old.odt new.odt result.json [compared.pdf]
 Requires LibreOffice and the Python module uno (package python3-uno).
 """
 import json
@@ -54,6 +55,7 @@ def redline_text(redline):
 
 def main():
     old, new, out = (os.path.abspath(a) for a in sys.argv[1:4])
+    pdf = os.path.abspath(sys.argv[4]) if len(sys.argv) > 4 else None
     with tempfile.TemporaryDirectory() as profile:
         proc, ctx = connect(profile)
         smgr = ctx.ServiceManager
@@ -72,6 +74,8 @@ def main():
             r = redlines.nextElement()
             text, table = redline_text(r)
             result.append({'type': r.getPropertyValue('RedlineType'), 'text': text, 'table': table})
+        if pdf:
+            doc.storeToURL(uno.systemPathToFileUrl(pdf), (prop('FilterName', 'writer_pdf_Export'),))
         doc.close(True)
         try:
             desktop.terminate()
